@@ -41,6 +41,7 @@ display-interface = "0.4"
 embedded-graphics = "0.8.0"
 mipidsi = { git = "https://github.com/almindor/mipidsi.git" }
 heapless = "0.8.0"
+tinybmp = "0.6.0"
 
 # prox/gesture/light
 apds9960 = "0.1.0"
