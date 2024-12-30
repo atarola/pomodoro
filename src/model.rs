@@ -19,7 +19,7 @@ impl SharedState {
         SharedState {
             state: CurrentState::STARTED,
             target_minutes: 20,
-            millis_left: 1 * 60 * 1000,
+            millis_left: 20 * 60 * 1000,
             last: Instant::now(),
         }
     }
@@ -34,6 +34,7 @@ impl SharedState {
         }
 
         self.target_minutes = self.target_minutes - 5;
+        self.millis_left = self.target_minutes * 60 * 1000;
     }
 
     pub fn target_up(&mut self) {
@@ -46,6 +47,7 @@ impl SharedState {
         }
 
         self.target_minutes = self.target_minutes + 5;
+        self.millis_left = self.target_minutes * 60 * 1000;
     }
 
     pub fn toggle(&mut self) {
@@ -57,7 +59,8 @@ impl SharedState {
 
     fn stop(&mut self) {
         self.state = CurrentState::STOPPED;
-        self.millis_left = 0;
+        self.millis_left = self.target_minutes * 60 * 1000;
+        self.last = Instant::now();
     }
 
     fn start(&mut self) {
