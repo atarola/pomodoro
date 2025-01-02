@@ -69,11 +69,11 @@ impl SharedState {
         self.last = Instant::now();
     }
 
-    pub fn tick(&mut self) -> bool {
+    pub fn tick(&mut self) -> (bool, bool) {
         if self.state == CurrentState::STOPPED {
             // keep on keeping on
             self.last = Instant::now();
-            return false;
+            return (false, false);
         }
 
         let old_millis = self.millis_left;
@@ -84,7 +84,7 @@ impl SharedState {
 
         if elapsed >= old_millis {
             self.stop();
-            return true;
+            return (true, true);
         }
 
         self.millis_left = old_millis - elapsed;
@@ -92,10 +92,10 @@ impl SharedState {
 
         // update the display if the seconds have changed
         if  to_seconds(old_millis) != to_seconds(self.millis_left) {
-            return true;
+            return (true, false);
         }
 
-        false
+        (false, false)
     }
 }
 

@@ -2,7 +2,7 @@
 #![no_main]
 #![feature(impl_trait_in_assoc_type)]
 
-mod display;
+mod output;
 mod model;
 mod input;
 
@@ -26,7 +26,8 @@ bind_interrupts!(struct Irqs {
     SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1 => twim::InterruptHandler<TWISPI1>;
 });
 
-static CHANNEL: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
+static DISPLAY_SIGNAL: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
+static STATE_SIGNAL: Channel<ThreadModeRawMutex, bool, 1> = Channel::new();
 static SPI_BUS: StaticCell<NoopMutex<RefCell<Spim<SPI3>>>> = StaticCell::new();
 static I2C_BUS: StaticCell<NoopMutex<RefCell<Twim<TWISPI1>>>> = StaticCell::new();
 static SHARED_STATE: Mutex<ThreadModeRawMutex, RefCell<Option<model::SharedState>>> = Mutex::new(RefCell::new(Option::None));
@@ -41,6 +42,7 @@ async fn main(spawner: Spawner) {
     let cs = Output::new(p.P0_12, Level::Low, OutputDrive::Standard);
     let dc = Output::new(p.P0_13, Level::Low, OutputDrive::Standard);
     let rst = Output::new(p.P1_03, Level::Low, OutputDrive::Standard);
+    let spk = Output::new(p.P1_00, Level::Low, OutputDrive::Standard);
 
     // data
     {
@@ -71,7 +73,8 @@ async fn main(spawner: Spawner) {
     spawner.must_spawn(input::button_a_task(button_a));
     spawner.must_spawn(input::button_b_task(button_b));
     spawner.must_spawn(input::proximity_sensor_task(i2c_dev));
-    spawner.must_spawn(display::display_task(spi_dev, dc, rst));
+    spawner.must_spawn(output::display_task(spi_dev, dc, rst));
+    spawner.must_spawn(output::notification_task(spk));
 
     // heartbeat
     let mut ticker = Ticker::every(Duration::from_millis(300));
@@ -82,8 +85,14 @@ async fn main(spawner: Spawner) {
         {        
             let mut container = SHARED_STATE.lock().await;
             if let Some(state) = container.get_mut() {
-                if state.tick() {
-                    CHANNEL.send(true).await;
+                let (second_changed, state_changed) = state.tick();
+
+                if state_changed {
+                    STATE_SIGNAL.send(true).await;
+                }
+
+                if second_changed {
+                    DISPLAY_SIGNAL.send(true).await;
                 }
             } 
         }
