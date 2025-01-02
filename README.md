@@ -1,3 +1,3 @@
-# adafruit-clue-template
-Template for simple Adafruit Clue apps in Rust.
-Edit Cargo.toml to reflect your actual dependencies.
+# Pomodoro Application 
+
+Pomodoro application written in Rust using Embassy, for use on the Adafruit CLUE.
