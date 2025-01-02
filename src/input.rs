@@ -59,10 +59,10 @@ pub async fn proximity_sensor_task(
                     let mut container = SHARED_STATE.lock().await;
                     if let Some(state) = container.get_mut() {
                         state.toggle();
-                        DISPLAY_SIGNAL.send(true).await;
                     }
                 }
 
+                DISPLAY_SIGNAL.send(true).await;
                 Timer::after(Duration::from_millis(150)).await;
             }
         }
